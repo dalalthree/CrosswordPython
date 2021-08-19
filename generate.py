@@ -206,7 +206,6 @@ class CrosswordCreator():
         
         return True
 
-
     def order_domain_values(self, var, assignment):
         """
         Return a list of values in the domain of `var`, in order by
@@ -214,8 +213,18 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        values = []
-        values = self.domains[var]
+        def leastContrainValHeuristic(val):
+            count = 0
+            for neighbor in self.getNeighbors(var):
+                if neighbor not in assignment:
+                    for val2 in self.domains[neighbor]:
+                        overlap = self.crossword.overlaps[var, neighbor]
+                        if val[overlap[0]] != val2[overlap[1]]:
+                            count += 1
+            return count
+
+        values = list(self.domains[var])
+        values.sort(key=leastContrainValHeuristic)
         return values
 
     def select_unassigned_variable(self, assignment):
@@ -254,7 +263,7 @@ class CrosswordCreator():
         if self.assignment_complete(assignment):
             return assignment
         var = self.select_unassigned_variable(assignment)
-        for value in self.domains[var]:
+        for value in self.order_domain_values(var, assignment):
             checkAssign = assignment.copy()
             checkAssign[var] = value
             if self.consistent(checkAssign):
