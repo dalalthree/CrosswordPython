@@ -157,15 +157,17 @@ class CrosswordCreator():
 
                 if self.getNeighbors(a[0]) != None:
                     for n in self.getNeighbors(a[0]):
-                        if n != a[1]:
-                            queue.append(n)
+                        if not n.__eq__(a[1]):
+                            queue.append((n, a[0]))
         return True
     
     def getNeighbors(self, x):
         neighbors = []
         for var in self.crossword.variables:
-            if var != x and self.crossword.overlaps[x, var] != None:
+            if (not var.__eq__(x)) and self.crossword.overlaps[x, var] != None:
                 neighbors.append(var)
+        
+        return neighbors
 
     def getAllArcs(self):
         arcs = []
@@ -181,7 +183,7 @@ class CrosswordCreator():
         crossword variable); return False otherwise.
         """
         for var in self.crossword.variables:
-            if assignment.get(var) == None:
+            if var not in assignment.keys() and assignment.get(var) == None:
                 return False
 
         return True
@@ -195,7 +197,7 @@ class CrosswordCreator():
             if var1.length != len(assignment[var1]):
                 return False
             for var2 in assignment.keys():
-                if var1 != var2:
+                if not var1.__eq__(var2):
                     overlap = self.crossword.overlaps[var1, var2]
                     if overlap != None and assignment[var1][overlap[0]] != assignment[var2][overlap[1]]:
                         return False
@@ -224,9 +226,21 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
+        
+        minimum = None
         for var in self.crossword.variables:
             if var not in assignment.keys():
-                return var
+                if minimum not in self.crossword.variables:
+                    minimum = var
+                if len(self.domains[var]) < len(self.domains[minimum]):
+                    minimum = var
+                elif len(self.domains[var]) == len(self.domains[minimum]):
+                    if self.getNeighbors(var) != None and self.getNeighbors(minimum) != None:
+                        if len(self.getNeighbors(var)) > len(self.getNeighbors(minimum)):
+                            minimum = var
+                    elif self.getNeighbors(var) != None and self.getNeighbors(minimum) == None:
+                        minimum = var
+        return minimum
 
     def backtrack(self, assignment):
         """
@@ -248,7 +262,7 @@ class CrosswordCreator():
                 result = self.backtrack(assignment)
                 if result != False:
                     return result
-                assignment[var] = None
+                del assignment[var]
         return False
 
 
